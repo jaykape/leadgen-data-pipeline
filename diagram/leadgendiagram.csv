@@ -1,0 +1,36 @@
+Id,Name,Shape Library,Page ID,Contained By,Group,Line Source,Line Destination,Source Arrow,Destination Arrow,Status,Text Area 1,Comments
+1,Document,,,,,,,,,Draft,AWS web app structural flow,
+2,Page,,,,,,,,,,Page 1,
+3,Amazon Cloud,AWS,2,,,,,,,,,
+4,Private subnet,AWS,2,3|6,,,,,,,,
+5,Public subnet,AWS,2,3|6,,,,,,,,
+6,Virtual private cloud (VPC),AWS,2,3,,,,,,,,
+7,Client,AWS 2019,2,,,,,,,,"Clients 
+(Landing Pages)",
+8,Amazon API Gateway,AWS,2,3,,,,,,,Amazon API Gateway,
+9,AWS Lambda,AWS,2,3|4|6,,,,,,,AWS Lambda,
+10,Amazon EC2,AWS,2,3|5|6,,,,,,,,
+11,Amazon RDS,AWS,2,3|4|6,,,,,,,Amazon RDS,
+12,Bucket,AWS 2019,2,3,,,,,,,S3 Bucket,
+13,Client,AWS 2019,2,,,,,,,,Engineer,
+14,SVGPathBlock2,,2,3|5|6,,,,,,,,
+15,Email,AWS,2,,,,,,,,Email,
+16,Text,Standard,2,3|5|6,,,,,,,"AWS EC2
+running Airflow",
+17,Text,Standard,2,3|5|6,,,,,,,Public subnet,
+18,Text,Standard,2,3|4|6,,,,,,,Private subnet,
+19,Text,Standard,2,3|6,,,,,,,"Virtual
+Private
+Cloud
+(VPC)",
+20,Text,Standard,2,3,,,,,,,AWS Cloud,
+21,Text,Standard,2,3,,,,,,,"Provision infrastructure 
+using Terraform",
+22,SVGPathBlock2,,2,3,,,,,,,,
+23,Line,,2,,,7,8,None,Arrow,,App API,
+24,Line,,2,,,9,8,Arrow,None,,invoke,
+25,Line,,2,,,9,11,None,Arrow,,write,
+26,Line,,2,,,11,12,None,Arrow,,daily snapshot,
+27,Line,,2,,,13,10,None,Arrow,,SSH,
+28,Line,,2,,,10,15,None,Arrow,,notify when task complete,
+29,Line,,2,,,10,11,None,Arrow,,,

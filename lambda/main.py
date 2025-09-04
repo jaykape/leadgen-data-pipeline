@@ -1,3 +1,5 @@
+"""Lambda to write lead data"""
+
 import os
 import json
 import psycopg2
@@ -25,29 +27,24 @@ def handler(event, context):
         }
 
     try:
-        conn = psycopg2.connect(
+        with psycopg2.connect(
             host=DB_HOST,
             database=DB_NAME,
             user=DB_USER,
             password=DB_PASS,
             port=5432
-        )
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            INSERT INTO leads (name, email, source) 
-            VALUES (%s, %s, %s) 
-            RETURNING id;
-            """,
-            (lead_name, lead_email, lead_source)
-
-        )
-
-        new_row = cursor.fetchone()
-        conn.commit()
-        cursor.close()
-        conn.close()
+        ) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                INSERT INTO form_submission (name, email, source) 
+                VALUES (%s, %s, %s) 
+                RETURNING id;
+                """,
+                    (lead_name, lead_email, lead_source)
+                )
+                new_row = cursor.fetchone()
+                conn.commit()
 
         return {
             'statusCode': 200,

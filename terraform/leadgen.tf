@@ -80,6 +80,15 @@ resource "aws_vpc_security_group_ingress_rule" "ec2_to_rds" {
   to_port                      = 5432
 }
 
+resource "aws_vpc_security_group_egress_rule" "ec2_to_any" {
+  security_group_id            = aws_security_group.lambda.id
+  referenced_security_group_id = aws_security_group.rds.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+}
+
+
 ######################################################################
 
 # RDS 
@@ -145,10 +154,30 @@ resource "aws_iam_role_policy" "lambda_vpc_policy" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_logging" {
+  role       = aws_iam_role.lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 data "archive_file" "code" {
   type        = "zip"
   source_file = "../lambda/main.py"
   output_path = "../lambda/function.zip"
+}
+
+resource "aws_lambda_layer_version" "my_layer" {
+  filename            = "../lambda/psycopg2.zip"
+  layer_name          = "psycopg2"
+  compatible_runtimes = ["python3.13"]
+}
+
+
+resource "aws_lambda_permission" "allow_http_api" {
+  statement_id  = "AllowExecutionFromHttpApi"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.leadgen.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.leadgen.execution_arn}/*/*"
 }
 
 resource "aws_lambda_function" "leadgen" {
@@ -157,9 +186,8 @@ resource "aws_lambda_function" "leadgen" {
   role             = aws_iam_role.lambda.arn
   handler          = "main.handler"
   source_code_hash = data.archive_file.code.output_base64sha256
-
-  runtime = "python3.13"
-
+  runtime          = "python3.13"
+  layers           = [aws_lambda_layer_version.my_layer.arn]
   environment {
     variables = {
       DB_HOST = aws_db_instance.postgres.address
@@ -195,7 +223,7 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
 
 resource "aws_apigatewayv2_route" "leadgen" {
   api_id    = aws_apigatewayv2_api.leadgen.id
-  route_key = "POST /leads"
+  route_key = "POST /leadgen"
   target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
 }
 
@@ -204,13 +232,24 @@ resource "aws_apigatewayv2_stage" "prod" {
   api_id      = aws_apigatewayv2_api.leadgen.id
   name        = "prod"
   auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gw_logs.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      userAgent      = "$context.identity.userAgent"
+    })
+  }
 }
 
-
-resource "aws_lambda_permission" "allow_http_api" {
-  statement_id  = "AllowExecutionFromHttpApi"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.leadgen.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.leadgen.execution_arn}/*/*"
+resource "aws_cloudwatch_log_group" "api_gw_logs" {
+  name              = "/aws/apigateway/http-api"
+  retention_in_days = 7
 }

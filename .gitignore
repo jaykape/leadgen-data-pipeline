@@ -1,4 +1,13 @@
 terraform/terraform.tfvars
 terraform/terraform.tfstate
 terraform/.terraform
+
+lambda/pyscop2g.zip
+lambda/python
+
+airflow/logs
+airflow/plugins
+airflow/variables.env
+
 configtest.env
+

@@ -72,28 +72,51 @@ After some customization the diagram will become easier to read.
 
 ![](diagram/dependencyv2.png)
 
-### Step 3 : Test the result
+### Step 3 : Writing a Lambda function code 
 
-**3.0. Create resources**
+First, my lambda function has to handle body of HTTP requests that store lead data.  
+I use `json` to extract information.
+
+Next we want to connecting to our RDS database which running PostgreSQL.  
+I use `os` to import environment variables and `psycopg2` for the connection.  
+
+You can look at the file `lambda/main.py`
+
+### Step 4 : Writing a DAG file and Docker Compose for Airflow
+
+I use Docker to simplify installation (most done on my local machine).
+
+In LocalExecutor setup, the main Airflow components needed are:
+1. Database for metedata
+2. Webserver
+3. Scheduler
+4. Initialization (airflow-init), only run once to initialize. 
+
+
+You can look at the directory `airflow`
+
+### Step 5 : Test the result
+
+**5.0. Create resources**
 
 In Terraform directory, runs `terraform init` for plugins initialization.  
 Then runs `terraform plan` to review plan and possibly errors.  
 Then runs `terraform apply`.
 
-**3.1. Connecting to RDS** 
+**5.1. Connecting to RDS** 
 
 Using SSH local port forwarding to map RDS port 5432 to my local machine through a bastion EC2.
 
 `ssh -i <path to key> -L <local_port>:<rds_endpoint>:<rds_port> ec2-user@<ec2_public_ip> -N`
 
-**3.2 Prepare database** 
+**5.2 Prepare database** 
 
 Use DBeaver to connect to the database (which now host=localhost).
 Create a table to prepare for writing.
 
 ![](images/dbeaver1.jpg)
 
-**3.3 Test Lambda function** 
+**5.3 Test Lambda function** 
 
 Write a simple script to send a simple POST request to the API gateway endpoint.
 
@@ -101,24 +124,24 @@ Since I already add a permission for lambda to write to CloudWatch, I can look a
 
 ![](images/lambda-cloudwatch.jpg)
 
-**3.4 Upload necessarily files to run Airflow to EC2**
+**5.4 Upload necessarily files to run Airflow to EC2**
 
-**3.5 Check the snapshot in S3**
+**5.5 Check the snapshot in S3**
 
-### Step 4 : Finalize the project
+### Step 6 : Finalize the project
 
 I will not forget to delete all resources created in this project via `terrform destroy` to avoid AWS bill.  
 Keep tracking the service AWS Billing and Cost Management for a while.
 
 Below I documented some of interesting mistake during the process.
 
-#### 4.1. Default outbound rule in security group
+#### 6.1. Default outbound rule in security group
 
 When we create a new security group manually in the AWS console, AWS automatically adds a default outbound rule that allows all outbound traffic (`0.0.0.0/0` on all ports/protocols).
 
 Creating a security group via Terraform does not apply that. We have to define egress rule block.  
 
-#### 4.2. File for lambda layers
+#### 6.2. File for lambda layers
 
 The file inside the zip has to have python as the root directory.  
 source: https://docs.aws.amazon.com/lambda/latest/dg/python-layers.html

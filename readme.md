@@ -84,7 +84,7 @@ You can look at the file `lambda/main.py`
 
 ### Step 4 : Writing a DAG file and Docker Compose for Airflow
 
-I use Docker to simplify installation (most done on my local machine).
+I use Docker Compose to simplify installation.
 
 In LocalExecutor setup, the main Airflow components needed are:
 1. Database for metedata
@@ -92,6 +92,8 @@ In LocalExecutor setup, the main Airflow components needed are:
 3. Scheduler
 4. Initialization (airflow-init), only run once to initialize. 
 
+
+For snapshots creation and exporting, we use the Python package `boto3` which allow us to interact with resources in AWS.
 
 You can look at the directory `airflow`
 

@@ -49,6 +49,12 @@ resource "aws_vpc_security_group_ingress_rule" "public_to_ec2" {
   to_port           = 22
 }
 
+resource "aws_vpc_security_group_egress_rule" "ec2_to_any" {
+  security_group_id = aws_security_group.ec2.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+}
+
 resource "aws_instance" "snap" {
   ami                    = "ami-0779c82fbb81e731c"
   instance_type          = "t2.micro"

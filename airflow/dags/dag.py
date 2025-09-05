@@ -5,16 +5,17 @@ from datetime import datetime, timedelta
 import boto3
 import os
 
-AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
-RDS_INSTANCE_ID = "your-rds-instance-id"
-SNAPSHOT_PREFIX = "daily-snapshot"
-EXPORT_BUCKET = "your-s3-bucket-name"
-EMAIL_RECIPIENT = "you@example.com"
+AWS_REGION = os.getenv("AWS_DEFAULT_REGION")
+RDS_INSTANCE_ID = os.getenv("RDS_INSTANCE_ID")
+SNAPSHOT_PREFIX = os.getenv("SNAPSHOT_PREFIX")
+EXPORT_BUCKET = os.getenv("EXPORT_BUCKET")
+EMAIL = os.getenv("EMAIL")
+KMS_KEY_ID = os.getenv("KMS_KEY_ID")
 
 
 def create_snapshot():
     rds = boto3.client("rds", region_name=AWS_REGION)
-    snapshot_id = f"{SNAPSHOT_PREFIX}-{datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}"
+    snapshot_id = f"{SNAPSHOT_PREFIX}-{datetime.now().strftime('%Y-%m-%d-%H-%M')}"
     rds.create_db_snapshot(
         DBInstanceIdentifier=RDS_INSTANCE_ID,
         DBSnapshotIdentifier=snapshot_id
@@ -27,11 +28,11 @@ def export_snapshot_to_s3(snapshot_id: str):
     export_task_id = f"export-{snapshot_id}"
     rds.start_export_task(
         ExportTaskIdentifier=export_task_id,
-        SourceArn=f"arn:aws:rds:{AWS_REGION}:YOUR_AWS_ACCOUNT:db:{RDS_INSTANCE_ID}",
+        SourceArn=f"arn:aws:rds:{AWS_REGION}:681696217554:db:{RDS_INSTANCE_ID}",
         S3BucketName=EXPORT_BUCKET,
-        IamRoleArn="arn:aws:iam::YOUR_AWS_ACCOUNT:role/YourRDSExportRole",
-        KmsKeyId="YOUR_KMS_KEY_ARN",
-        SnapshotTime=datetime.utcnow()
+        IamRoleArn="arn:aws:iam::681696217554:role/rds-s3-export-role",
+        KmsKeyId=KMS_KEY_ID,
+        SnapshotTime=datetime.now()
     )
     return export_task_id
 
@@ -47,8 +48,8 @@ with DAG(
     "rds_snapshot_to_s3",
     default_args=default_args,
     description="Daily RDS snapshot to S3",
-    schedule_interval="@daily",
-    start_date=datetime(2025, 9, 5),
+    schedule_interval="* /10 * * * *",
+    start_date=datetime.now(),
     catchup=False,
     tags=["rds", "s3"],
 ) as dag:
@@ -67,7 +68,7 @@ with DAG(
 
     email_snapshot_success = EmailOperator(
         task_id="snapshot_success_email",
-        to=EMAIL_RECIPIENT,
+        to=EMAIL,
         subject="RDS Snapshot Created Successfully",
         html_content="""<h3>The RDS snapshot has been created successfully.</h3>
                         <p>Snapshot ID: {{ ti.xcom_pull(task_ids='create_snapshot') }}</p>"""
@@ -75,7 +76,7 @@ with DAG(
 
     email_export_success = EmailOperator(
         task_id="export_success_email",
-        to=EMAIL_RECIPIENT,
+        to=EMAIL,
         subject="RDS Snapshot Export Started Successfully",
         html_content="""<h3>The RDS snapshot export has been started successfully.</h3>
                         <p>Export Task ID: {{ ti.xcom_pull(task_ids='export_to_s3') }}</p>"""

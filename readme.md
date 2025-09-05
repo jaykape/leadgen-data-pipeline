@@ -93,7 +93,16 @@ In LocalExecutor setup, the main Airflow components needed are:
 4. Initialization (airflow-init), only run once to initialize. 
 
 
-For snapshots creation and exporting, we use the Python package `boto3` which allow us to interact with resources in AWS.
+For snapshots creation and exporting, we use the Python package `boto3` which allow us to interact with resources in AWS. 
+
+Unlike other client tools like psycpg2, when we use boto3, we don't import any credential variables into the code. It will automatically search in various places.  
+See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+Since I run Airflow in an EC2 instance with a proper IAM role, I don’t need to manually store AWS access keys on the instance.
+
+These are sources for create and export snapshots from RDS:
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds/client/start_export_task.html
+
 
 You can look at the directory `airflow`
 
@@ -126,7 +135,35 @@ Since I already add a permission for lambda to write to CloudWatch, I can look a
 
 ![](images/lambda-cloudwatch.jpg)
 
-**5.4 Upload necessarily files to run Airflow to EC2**
+**5.4 Upload necessarily files and run Airflow to EC2**
+
+I run Secure Copy Protocol by 
+ `scp -i <Path to SSH key> -r <Airflow folder path> ec2-user@<EC2IP>:/home/ec2-user/` to send the folder `airflow/`
+
+After that SSH into the instance, then run  
+`sudo dnf update -y`  
+`sudo dnf install -y docker`  
+(`dnf` is a Package management tool for Amazon Linux 2023).
+
+Then start docker service:  
+`sudo systemctl start docker`  
+`sudo systemctl enable docker`
+
+Give ec2-user permission to run without `sudo`:  
+`sudo usermod -aG docker ec2-user`
+
+Install Docker compose:  
+`sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose`  
+`sudo chmod +x /usr/local/bin/docker-compose`  
+
+Install Python3 + pip:  
+`sudo dnf install -y python3 python3-pip`  
+
+
+Now we can start Airflow:  
+`docker-compose up airflow-init`
+
+
 
 **5.5 Check the snapshot in S3**
 

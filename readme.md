@@ -102,7 +102,7 @@ Since I run Airflow in an EC2 instance with a proper IAM role, I don’t need to
 
 These are sources for create and export snapshots from RDS:
 https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds/client/start_export_task.html
-
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds/client/create_db_snapshot.html
 
 You can look at the directory `airflow`
 
@@ -184,4 +184,17 @@ Creating a security group via Terraform does not apply that. We have to define e
 
 The file inside the zip has to have python as the root directory.  
 source: https://docs.aws.amazon.com/lambda/latest/dg/python-layers.html
+
+#### 6.3. Errors while try to run Airflow
+
+When I run `docker-compose.yaml up airflow-init` I encounter a lot of errors.
+
+  - ![](images/airflow-init-error-1.jpg)
+
+    This happen beacuse in the compose file I type:
+    <pre> ```    command: >
+      -c "airflow db init &&
+          airflow users create \
+            --username ${AIRFLOW_ADMIN_USERNAME} \``` </pre>
+
 

@@ -49,6 +49,15 @@ resource "aws_vpc_security_group_ingress_rule" "public_to_ec2" {
   to_port           = 22
 }
 
+resource "aws_vpc_security_group_ingress_rule" "airflow-webserver" {
+  security_group_id = aws_security_group.ec2.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 8080
+  to_port           = 8080
+}
+
+
 resource "aws_vpc_security_group_egress_rule" "ec2_to_any" {
   security_group_id = aws_security_group.ec2.id
   cidr_ipv4         = "0.0.0.0/0"

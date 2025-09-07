@@ -92,6 +92,7 @@ In LocalExecutor setup, the main Airflow components needed are:
 3. Scheduler
 4. Initialization (airflow-init), only run once to initialize. 
 
+Source for minimal Airflow setup: https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html#required-components 
 
 For snapshots creation and exporting, we use the Python package `boto3` which allow us to interact with resources in AWS. 
 
@@ -99,10 +100,6 @@ Unlike other client tools like psycpg2, when we use boto3, we don't import any c
 See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
 
 Since I run Airflow in an EC2 instance with a proper IAM role, I don’t need to manually store AWS access keys on the instance.
-
-These are sources for create and export snapshots from RDS:
-https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds/client/start_export_task.html
-https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds/client/create_db_snapshot.html
 
 You can look at the directory `airflow`
 
@@ -135,7 +132,7 @@ Since I already add a permission for lambda to write to CloudWatch, I can look a
 
 ![](images/lambda-cloudwatch.jpg)
 
-**5.4 Upload necessarily files and run Airflow to EC2**
+**5.4 Upload necessarily files to EC2 and run Airflow**
 
 I run Secure Copy Protocol by 
  `scp -i <Path to SSH key> -r <Airflow folder path> ec2-user@<EC2IP>:/home/ec2-user/` to send the folder `airflow/`
@@ -191,10 +188,27 @@ When I run `docker-compose.yaml up airflow-init` I encounter a lot of errors.
 
   - ![](images/airflow-init-error-1.jpg)
 
-    This happen beacuse in the compose file I type:
-    <pre> ```    command: >
-      -c "airflow db init &&
-          airflow users create \
-            --username ${AIRFLOW_ADMIN_USERNAME} \``` </pre>
+    It try to execute flags as separate command. So a quick fix is not to use new line `\` and write the command in a single line in compose file, since indentation is sensitive in yaml. 
 
+  - <pre>PermissionError: [Errno 13] Permission denied: '/opt/airflow/logs/scheduler/2025-09-06'
 
+    ...
+    ValueError: Unable to configure handler 'processor'</pre>
+
+    This happened because I mount volume to `./opt/airflow/logs/` in compose. Note that Airflow official image create and use a user of UID 50000. So I just need to create directories and change their permission so the container’s airflow user can read/write.
+
+    `mkdir -p logs dags plugins`  
+    `sudo chown -R 50000:50000 logs dags plugins`
+
+  - SSH becomes slow to establish connection. This could because we open many ssh session without closing it properly.
+
+    In EC2, just run `ps aux | grep ssh` to see all active ssh process and force kill using `kill -9 <PID1> <PID2> <PID3> ...`
+
+    Note on flags: 
+    - a – Show processes for all users, not just the current user.
+
+    - u – Display the user/owner of the process + additional info.
+
+    - x – Include processes not attached to a terminal (background or daemon).  
+
+    - 9 = force kill

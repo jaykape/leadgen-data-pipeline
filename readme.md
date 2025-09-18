@@ -10,7 +10,7 @@ Below is the diagram I draw using lucid.app
 
 ## Project building process
 
-### Step 1 : Make a rough idea
+### <span style="color:#34c3e3">Step 1 : Make a rough idea</span>
 
 I want to create a data flow for lead generation through form to writing them into database.  
 
@@ -33,7 +33,7 @@ I host it on an EC2 instance. This instance will be use to access to RDS too.
 
 On top of the project, I use Terraform for provisioning AWS resources.
 
-### Step 2 : Writing a terraform file
+### <span style="color:#34c3e3">Step 2 : Writing a terraform file</span>
 
 Terraform resources we have to create are not just service units like an EC2 instance or an S3 bucket. Services of compute types are deployed inside a VPC (Virtual Private Cloud). Interaction between services require certain group of rules to make it happen.
 
@@ -72,7 +72,7 @@ After some customization the diagram will become easier to read.
 
 ![](diagram/dependencyv2.png)
 
-### Step 3 : Writing a Lambda function code 
+### <span style="color:#34c3e3">Step 3 : Writing a Lambda function code<span> 
 
 First, my lambda function has to handle body of HTTP requests that store lead data.  
 I use `json` to extract information.
@@ -82,7 +82,7 @@ I use `os` to import environment variables and `psycopg2` for the connection.
 
 You can look at the file `lambda/main.py`
 
-### Step 4 : Writing a DAG file and Docker Compose for Airflow
+### <span style="color:#34c3e3">Step 4 : Writing a DAG file and Docker Compose for Airflow<span>
 
 I use Docker Compose to simplify installation.
 
@@ -103,7 +103,7 @@ Since I run Airflow in an EC2 instance with a proper IAM role, I don’t need to
 
 You can look at the directory `airflow`
 
-### Step 5 : Test the result
+### <span style="color:#34c3e3">Step 5 : Test the result</span>
 
 **5.0. Create resources**
 
@@ -164,7 +164,7 @@ Now we can start Airflow:
 
 **5.5 Check the snapshot in S3**
 
-### Step 6 : Finalize the project
+### <span style="color:#34c3e3">Step 6 : Finalize the project</span>
 
 I will not forget to delete all resources created in this project via `terrform destroy` to avoid AWS bill.  
 Keep tracking the service AWS Billing and Cost Management for a while.
